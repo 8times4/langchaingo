@@ -65,7 +65,7 @@ func (c RetrievalQA) Call(ctx context.Context, values map[string]any, options ..
 		return nil, fmt.Errorf("%w: %w", ErrInvalidInputValues, ErrInputValuesWrongType)
 	}
 
-	docs, err := c.Retriever.GetRelevantDocuments(ctx, query)
+	docs, _, err := c.Retriever.GetRelevantDocuments(ctx, query)
 	if err != nil {
 		return nil, err
 	}

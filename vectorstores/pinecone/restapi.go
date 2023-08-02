@@ -118,7 +118,8 @@ func (s Store) restQuery(
 	nameSpace string,
 	scoreThreshold float64,
 	filter any,
-) ([]schema.Document, error) {
+	withScore bool,
+) ([]schema.Document, []float64, error) {
 	payload := queryPayload{
 		IncludeValues:   true,
 		IncludeMetadata: true,
@@ -136,12 +137,12 @@ func (s Store) restQuery(
 		http.MethodPost,
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer body.Close()
 
 	if statusCode != http.StatusOK {
-		return nil, newAPIError("querying index", body)
+		return nil, nil, newAPIError("querying index", body)
 	}
 
 	var response queriesResponse
@@ -149,18 +150,19 @@ func (s Store) restQuery(
 	decoder := json.NewDecoder(body)
 	err = decoder.Decode(&response)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if len(response.Matches) == 0 {
-		return nil, ErrEmptyResponse
+		return nil, nil, ErrEmptyResponse
 	}
 
 	docs := make([]schema.Document, 0, len(response.Matches))
+	scores := make([]float64, 0, len(response.Matches))
 	for _, match := range response.Matches {
 		pageContent, ok := match.Metadata[s.textKey].(string)
 		if !ok {
-			return nil, ErrMissingTextKey
+			return nil, nil, ErrMissingTextKey
 		}
 		delete(match.Metadata, s.textKey)
 
@@ -172,12 +174,18 @@ func (s Store) restQuery(
 		// If scoreThreshold is not 0, we only return matches with a score above the threshold.
 		if scoreThreshold != 0 && match.Score >= scoreThreshold {
 			docs = append(docs, doc)
+			if withScore {
+				scores = append(scores, match.Score)
+			}
 		} else if scoreThreshold == 0 { // If scoreThreshold is 0, we return all matches.
 			docs = append(docs, doc)
+			if withScore {
+				scores = append(scores, match.Score)
+			}
 		}
 	}
 
-	return docs, nil
+	return docs, scores, nil
 }
 
 func doRequest(ctx context.Context, payload any, url, apiKey, method string) (io.ReadCloser, int, error) {

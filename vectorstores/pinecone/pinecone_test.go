@@ -101,9 +101,15 @@ func TestPineconeStoreRest(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	docs, err := storer.SimilaritySearch(context.Background(), "japan", 1)
+	docs, _, err := storer.SimilaritySearch(context.Background(), "japan", 1)
 	require.NoError(t, err)
 	require.Len(t, docs, 1)
+	require.Equal(t, docs[0].PageContent, "tokyo")
+
+	docs, scores, err := storer.SimilaritySearch(context.Background(), "japan", 2, vectorstores.WithScore())
+	require.NoError(t, err)
+	require.Len(t, docs, 2)
+	require.Len(t, scores, 2)
 	require.Equal(t, docs[0].PageContent, "tokyo")
 }
 
@@ -140,18 +146,36 @@ func TestPineconeStoreRestWithScoreThreshold(t *testing.T) {
 	require.NoError(t, err)
 
 	// test with a score threshold of 0.8, expected 6 documents
-	docs, err := storer.SimilaritySearch(context.Background(),
+	docs, _, err := storer.SimilaritySearch(context.Background(),
 		"Which of these are cities in Japan", 10,
 		vectorstores.WithScoreThreshold(0.8))
 	require.NoError(t, err)
 	require.Len(t, docs, 6)
 
 	// test with a score threshold of 0, expected all 10 documents
-	docs, err = storer.SimilaritySearch(context.Background(),
+	docs, _, err = storer.SimilaritySearch(context.Background(),
 		"Which of these are cities in Japan", 10,
 		vectorstores.WithScoreThreshold(0))
 	require.NoError(t, err)
 	require.Len(t, docs, 10)
+
+	// test with a score threshold of 0.8, expected 6 documents, return scores as well
+	docs, scores, err := storer.SimilaritySearch(context.Background(),
+		"Which of these are cities in Japan", 10,
+		vectorstores.WithScoreThreshold(0.8), vectorstores.WithScore())
+	require.NoError(t, err)
+	require.Len(t, docs, 6)
+	require.Len(t, scores, 6)
+	//require last score to be no less than 0.8
+	require.GreaterOrEqual(t, scores[5], 0.8)
+
+	// test with a score threshold of 0, expected all 10 documents, return scores as well
+	docs, scores, err = storer.SimilaritySearch(context.Background(),
+		"Which of these are cities in Japan", 10,
+		vectorstores.WithScoreThreshold(0), vectorstores.WithScore())
+	require.NoError(t, err)
+	require.Len(t, docs, 10)
+	require.Len(t, scores, 10)
 }
 
 func TestSimilaritySearchWithInvalidScoreThreshold(t *testing.T) {
@@ -186,12 +210,12 @@ func TestSimilaritySearchWithInvalidScoreThreshold(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = storer.SimilaritySearch(context.Background(),
+	_, _, err = storer.SimilaritySearch(context.Background(),
 		"Which of these are cities in Japan", 10,
 		vectorstores.WithScoreThreshold(-0.8))
 	require.Error(t, err)
 
-	_, err = storer.SimilaritySearch(context.Background(),
+	_, _, err = storer.SimilaritySearch(context.Background(),
 		"Which of these are cities in Japan", 10,
 		vectorstores.WithScoreThreshold(1.8))
 	require.Error(t, err)

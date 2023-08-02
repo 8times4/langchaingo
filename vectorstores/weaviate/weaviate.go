@@ -135,22 +135,22 @@ func (s Store) SimilaritySearch(
 	query string,
 	numDocuments int,
 	options ...vectorstores.Option,
-) ([]schema.Document, error) {
+) ([]schema.Document, []float64, error) {
 	opts := s.getOptions(options...)
 	nameSpace := s.getNameSpace(opts)
 	scoreThreshold, err := s.getScoreThreshold(opts)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	filter := s.getFilters(opts)
 	whereBuilder, err := s.createWhereBuilder(nameSpace, filter)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	vector, err := s.embedder.EmbedQuery(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	res, err := s.client.GraphQL().
@@ -165,37 +165,37 @@ func (s Store) SimilaritySearch(
 		WithLimit(numDocuments).
 		WithFields(s.createFields()...).Do(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	return s.parseDocumentsByGraphQLResponse(res)
 }
 
-func (s Store) parseDocumentsByGraphQLResponse(res *models.GraphQLResponse) ([]schema.Document, error) {
+func (s Store) parseDocumentsByGraphQLResponse(res *models.GraphQLResponse) ([]schema.Document, []float64, error) {
 	if len(res.Errors) > 0 {
 		messages := make([]string, 0, len(res.Errors))
 		for _, e := range res.Errors {
 			messages = append(messages, e.Message)
 		}
-		return nil, fmt.Errorf("%w: %s", ErrInvalidResponse, strings.Join(messages, ", "))
+		return nil, nil, fmt.Errorf("%w: %s", ErrInvalidResponse, strings.Join(messages, ", "))
 	}
 
 	data, ok := res.Data["Get"].(map[string]any)[s.indexName]
 	if !ok || data == nil {
-		return nil, ErrEmptyResponse
+		return nil, nil, ErrEmptyResponse
 	}
 	items, ok := data.([]any)
 	if !ok || len(items) == 0 {
-		return nil, ErrEmptyResponse
+		return nil, nil, ErrEmptyResponse
 	}
 	docs := make([]schema.Document, 0, len(items))
 	for _, item := range items {
 		itemMap, ok := item.(map[string]any)
 		if !ok {
-			return nil, ErrInvalidResponse
+			return nil, nil, ErrInvalidResponse
 		}
 		pageContent, ok := itemMap[s.textKey].(string)
 		if !ok {
-			return nil, ErrMissingTextKey
+			return nil, nil, ErrMissingTextKey
 		}
 		delete(itemMap, s.textKey)
 		doc := schema.Document{
@@ -204,7 +204,7 @@ func (s Store) parseDocumentsByGraphQLResponse(res *models.GraphQLResponse) ([]s
 		}
 		docs = append(docs, doc)
 	}
-	return docs, nil
+	return docs, nil, nil
 }
 
 func (s Store) getNameSpace(opts vectorstores.Options) string {

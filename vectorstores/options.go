@@ -8,6 +8,7 @@ type Options struct {
 	NameSpace      string
 	ScoreThreshold float64
 	Filters        any
+	WithScore      bool
 }
 
 // WithNameSpace returns an Option for setting the name space.
@@ -20,6 +21,13 @@ func WithNameSpace(nameSpace string) Option {
 func WithScoreThreshold(scoreThreshold float64) Option {
 	return func(o *Options) {
 		o.ScoreThreshold = scoreThreshold
+	}
+}
+
+// WithScore returns a boolean Option for setting whether to return scores.
+func WithScore() Option {
+	return func(o *Options) {
+		o.WithScore = true
 	}
 }
 

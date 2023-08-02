@@ -106,29 +106,36 @@ func (s Store) AddDocuments(ctx context.Context, docs []schema.Document, options
 
 // SimilaritySearch creates a vector embedding from the query using the embedder
 // and queries to find the most similar documents.
-func (s Store) SimilaritySearch(ctx context.Context, query string, numDocuments int, options ...vectorstores.Option) ([]schema.Document, error) { //nolint:lll
+func (s Store) SimilaritySearch(ctx context.Context, query string, numDocuments int, options ...vectorstores.Option) ([]schema.Document, []float64, error) { //nolint:lll
 	opts := s.getOptions(options...)
 
 	nameSpace := s.getNameSpace(opts)
 
 	filters := s.getFilters(opts)
 
+	withScore := opts.WithScore
+
 	scoreThreshold, err := s.getScoreThreshold(opts)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	vector, err := s.embedder.EmbedQuery(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if s.useGRPC {
-		return s.grpcQuery(ctx, vector, numDocuments, nameSpace)
+		docs, err := s.grpcQuery(ctx, vector, numDocuments, nameSpace)
+		if err != nil {
+			return nil, nil, err
+		} else {
+			return docs, nil, nil
+		}
 	}
 
 	return s.restQuery(ctx, vector, numDocuments, nameSpace, scoreThreshold,
-		filters)
+		filters, withScore)
 }
 
 // Close closes the grpc connection.

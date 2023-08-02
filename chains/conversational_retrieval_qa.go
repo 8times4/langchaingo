@@ -113,7 +113,7 @@ func (c ConversationalRetrievalQA) Call(ctx context.Context, values map[string]a
 		return nil, err
 	}
 
-	docs, err := c.Retriever.GetRelevantDocuments(ctx, question)
+	docs, _, err := c.Retriever.GetRelevantDocuments(ctx, question)
 	if err != nil {
 		return nil, err
 	}

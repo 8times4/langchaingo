@@ -90,7 +90,7 @@ func TestWeaviateStoreRest(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	docs, err := store.SimilaritySearch(context.Background(), "japan", 1)
+	docs, _, err := store.SimilaritySearch(context.Background(), "japan", 1)
 	require.NoError(t, err)
 	require.Len(t, docs, 1)
 	require.Equal(t, docs[0].PageContent, "tokyo")
@@ -131,14 +131,14 @@ func TestWeaviateStoreRestWithScoreThreshold(t *testing.T) {
 	require.NoError(t, err)
 
 	// test with a score threshold of 0.8, expected 6 documents
-	docs, err := store.SimilaritySearch(context.Background(),
+	docs, _, err := store.SimilaritySearch(context.Background(),
 		"Which of these are cities in Japan", 10,
 		vectorstores.WithScoreThreshold(0.9))
 	require.NoError(t, err)
 	require.Len(t, docs, 6)
 
 	// test with a score threshold of 0, expected all 10 documents
-	docs, err = store.SimilaritySearch(context.Background(),
+	docs, _, err = store.SimilaritySearch(context.Background(),
 		"Which of these are cities in Japan", 10,
 		vectorstores.WithScoreThreshold(0))
 	require.NoError(t, err)
@@ -178,12 +178,12 @@ func TestSimilaritySearchWithInvalidScoreThreshold(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = store.SimilaritySearch(context.Background(),
+	_, _, err = store.SimilaritySearch(context.Background(),
 		"Which of these are cities in Japan", 10,
 		vectorstores.WithScoreThreshold(-0.8))
 	require.Error(t, err)
 
-	_, err = store.SimilaritySearch(context.Background(),
+	_, _, err = store.SimilaritySearch(context.Background(),
 		"Which of these are cities in Japan", 10,
 		vectorstores.WithScoreThreshold(1.8))
 	require.Error(t, err)

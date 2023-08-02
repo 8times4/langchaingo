@@ -16,11 +16,11 @@ type testRetriever struct{}
 
 var _ schema.Retriever = testRetriever{}
 
-func (r testRetriever) GetRelevantDocuments(_ context.Context, _ string) ([]schema.Document, error) {
+func (r testRetriever) GetRelevantDocuments(_ context.Context, _ string) ([]schema.Document, []float64, error) {
 	return []schema.Document{
 		{PageContent: "foo is 34"},
 		{PageContent: "bar is 1"},
-	}, nil
+	}, nil, nil
 }
 
 func TestRetrievalQA(t *testing.T) {

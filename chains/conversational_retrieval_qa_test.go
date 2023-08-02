@@ -14,7 +14,7 @@ import (
 
 type testConversationalRetriever struct{}
 
-func (t testConversationalRetriever) GetRelevantDocuments(_ context.Context, query string) ([]schema.Document, error) { // nolint: lll
+func (t testConversationalRetriever) GetRelevantDocuments(_ context.Context, query string) ([]schema.Document, []float64, error) { // nolint: lll
 	if query == "What did the president say about Ketanji Brown Jackson" {
 		return []schema.Document{
 			// nolint: lll
@@ -33,7 +33,7 @@ func (t testConversationalRetriever) GetRelevantDocuments(_ context.Context, que
 			{
 				PageContent: "Tonight, I’m announcing a crackdown on these companies overcharging American businesses and consumers. \n\nAnd as Wall Street firms take over more nursing homes, quality in those homes has gone down and costs have gone up.  \n\nThat ends on my watch. \n\nMedicare is going to set higher standards for nursing homes and make sure your loved ones get the care they deserve and expect. \n\nWe’ll also cut costs and keep the economy going strong by giving workers a fair shot, provide more training and apprenticeships, hire them based on their skills not degrees. \n\nLet’s pass the Paycheck Fairness Act and paid leave.  \n\nRaise the minimum wage to $15 an hour and extend the Child Tax Credit, so no one has to raise a family in poverty. \n\nLet’s increase Pell Grants and increase our historic support of HBCUs, and invest in what Jill—our First Lady who teaches full-time—calls America’s best-kept secret: community colleges.",
 			},
-		}, nil
+		}, nil, nil
 	}
 
 	return []schema.Document{
@@ -53,7 +53,7 @@ func (t testConversationalRetriever) GetRelevantDocuments(_ context.Context, que
 		{
 			PageContent: "As Ohio Senator Sherrod Brown says, “It’s time to bury the label “Rust Belt.” \\n\\nIt’s time. \\n\\nBut with all the bright spots in our economy, record job growth and higher wages, too many families are struggling to keep up with the bills.  \\n\\nInflation is robbing them of the gains they might otherwise feel. \\n\\nI get it. That’s why my top priority is getting prices under control. \\n\\nLook, our economy roared back faster than most predicted, but the pandemic meant that businesses had a hard time hiring enough workers to keep up production in their factories. \\n\\nThe pandemic also disrupted global supply chains. \\n\\nWhen factories close, it takes longer to make goods and get them from the warehouse to the store, and prices go up. \\n\\nLook at cars. \\n\\nLast year, there weren’t enough semiconductors to make all the cars that people wanted to buy. \\n\\nAnd guess what, prices of automobiles went up. \\n\\nSo—we have a choice. \\n\\nOne way to fight inflation is to drive down wages and make Americans poorer.",
 		},
-	}, nil
+	}, nil, nil
 }
 
 var _ schema.Retriever = testConversationalRetriever{}
